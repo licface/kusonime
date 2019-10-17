@@ -393,7 +393,7 @@ class Kusonime(object):
         debug()
         animes = ''
 
-    def home(self, url = None, set_attrs=True, search = False, batch = False, debugx=False):
+    def home(self, url = None, set_attrs=True, search = False, batch = False, navigate = False, debugx=False):
         debug()
         debug(url = url, debug=debugx)
         # debug(url = url)
@@ -437,7 +437,7 @@ class Kusonime(object):
                 sys.stdout.write(".")
                 time.sleep(1)
         debug(div_kover=div_kover, debug=debugx)
-        n = 0
+        n = 1
         all_item = {}
         for i in div_kover:
             debug(i = i, debug = debugx)
@@ -491,6 +491,13 @@ class Kusonime(object):
             n += 1
         print "-" * cmdw.getWidth()
         debug(all_item = all_item, debug = True)
+        if navigate:
+            for i in all_item:
+                if len(str(i)) == 1:
+                    number = "0" + str(i)
+                else:
+                    number = str(i)
+                print " " * 4 + number + ".", make_colors(all_item.get(i).get('name').encode('utf-8'), 'lightgreen') + " [" + make_colors(str(all_item.get(i).get('release').encode('utf-8')), 'black', 'lightcyan') + "/" + make_colors(all_item.get(i).get('link').encode('utf-8'), 'lightwhite', 'lightmagenta') + "] "
         #pprint(all_item)
         #if batch:
             #all_item1 = div_box_item.find_all('div', {'class':'items'})
@@ -2166,7 +2173,7 @@ if __name__ == '__main__':
     PID = os.getpid()
     print "PID:", PID
     c = Kusonime()
-    c.home(debugx= True)
+    c.home(navigate= True, debugx= True)
     #c.usage()
 
     #c.get_movie_details('https://neonime.org/ashita-sekai-ga-owaru-toshitemo-bd-subtitle-indonesia/')
