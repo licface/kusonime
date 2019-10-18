@@ -416,7 +416,7 @@ class Kusonime(object):
                 time.sleep(0.5)
         b = bs(a.content, 'lxml')
         #debug(b = b, debug = debugx)
-        #pages = self.paginator(bs_object=b, url=url)
+        pages = self.paginator(bs_object=b, url=url)
         #debug(search = search, debug=debugx)
         #debug(batch = batch, debug=debugx)
         #if search or batch:
@@ -490,14 +490,20 @@ class Kusonime(object):
             })
             n += 1
         print "-" * cmdw.getWidth()
-        debug(all_item = all_item, debug = True)
+        debug(all_item = all_item, debug = debugx)
         if navigate:
             for i in all_item:
                 if len(str(i)) == 1:
                     number = "0" + str(i)
                 else:
                     number = str(i)
-                print " " * 4 + number + ".", make_colors(all_item.get(i).get('name').encode('utf-8'), 'lightgreen') + " [" + make_colors(str(all_item.get(i).get('release').encode('utf-8')), 'black', 'lightcyan') + "/" + make_colors(all_item.get(i).get('link').encode('utf-8'), 'lightwhite', 'lightmagenta') + "] "
+                print " " * 4 + number + ".", make_colors(all_item.get(i).get('name').encode('utf-8'), 'lightgreen') + " [" + make_colors(str(all_item.get(i).get('release').encode('utf-8')), 'black', 'lightcyan') + "] "
+            
+            pages_number = ""
+            for i in pages:
+                if isinstance(i, int):
+                    pages_number += str(i) + " | "
+            print make_colors("PAGE:", 'b', 'lc') + " " + pages_number + " Next | Last" 
         #pprint(all_item)
         #if batch:
             #all_item1 = div_box_item.find_all('div', {'class':'items'})
@@ -536,50 +542,33 @@ class Kusonime(object):
             #debug(all_item1=all_item1)
             #return (all_item1)
 
-    def paginator(self, class_name='dd', bs_object=None, page_type=None, url=None):
+    def paginator(self, class_name='pagination', bs_object=None, url=None):
         debug()
-        #page_type: anime, movies, release
         pages = {}
 
-        if page_type:
-            all_item1 = self.home(False)
-            if page_type == 'anime':
-                bs_object = all_item1[0]
-            elif page_type == 'movies':
-                bs_object = all_item1[2]
-            elif page_type == 'release':
-                bs_object = all_item1[1]
         if not bs_object:
             if not url:
                 url = self.url
             a = requests.get(url, proxies=self.proxies)
             bs_object = bs(a.content, 'lxml')
-        div_paginado = bs_object.find_all('div', {'class': 'paginado'})
-        debug(div_paginado=div_paginado)
-        # sys.exit(0)
-        n = 1
-        for p in div_paginado:
-            pages_per_page = []
-            all_li = p.find('ul').find_all('li')
-            for i in all_li:
-                if not i.text:
-                    all_li.remove(i)
-                elif i.text.strip() == "...":
-                    all_li.remove(i)
-            debug(all_li=all_li)
-            current_page = p.find('ul').find('li', {'class':class_name}).find('a').text
-            pages_per_page.append({'current_page':current_page})
-            next_page = all_li[1].find('a').get('href')
-            pages_per_page.append({'next_page':next_page})
-            last_page = all_li[-1].find('a').get('href')
-            pages_per_page.append({'last_page':last_page})
-            for i in all_li[1:]:
-                page = i.find('a').get('href')
-                page_name = i.find('a').text
-                pages_per_page.append({page_name:page})
-            debug(pages=pages)
-            pages.update({n:pages_per_page})
-            n+=1
+        div_pagination = bs_object.find('div', {'class': 'pagination'})
+        debug(div_pagination=div_pagination)
+        if not div_pagination:
+            return False
+        else:
+            all_pages = div_pagination.find('div', {'class': 'wp-pagenavi',}).find_all('a', {'class': 'page larger',})
+            next_page = div_pagination.find('div', {'class': 'wp-pagenavi',}).find('a', {'class': 'nextpostslink',}).get('href')
+            last_page = div_pagination.find('div', {'class': 'wp-pagenavi',}).find('a', {'class': 'last',}).get('href')
+            if all_pages:
+                for i in all_pages:
+                    page_number = re.sub("Page ", "", i.get('title'), re.I)                    
+                    pages.update(
+                        {
+                            int(page_number): i.get('href'),
+                        }
+                    )
+            pages.update({'next': next_page, 'last': last_page,})
+        debug(pages = pages)
         return pages
 
     def get_anime_details(self, url='https://neonime.org/episode/persona-5-the-animation-1x25/'):
@@ -2173,7 +2162,7 @@ if __name__ == '__main__':
     PID = os.getpid()
     print "PID:", PID
     c = Kusonime()
-    c.home(navigate= True, debugx= True)
+    c.home(navigate= True, debugx= False)
     #c.usage()
 
     #c.get_movie_details('https://neonime.org/ashita-sekai-ga-owaru-toshitemo-bd-subtitle-indonesia/')
